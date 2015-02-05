@@ -3,19 +3,19 @@
     "capabilities": [
         "configurable"
     ],
-    "companyName": "tjeerdhans (original by Maik Joosten)",
+    "companyName": "tjeerdhans",
     "longName": "Dutch time",
     "projectType": "native",
     "resources": {
         "media": [
             {
-                "file": "fonts/GeorgiaSmall.ttf",
-                "name": "GEORGIA_30",
+                "file": "fonts/Georgia.ttf",
+                "name": "GEORGIA_40",
                 "type": "font"
             },
             {
-                "file": "fonts/Georgia.ttf",
-                "name": "GEORGIA_40",
+                "file": "fonts/GeorgiaSmall.ttf",
+                "name": "GEORGIA_30",
                 "type": "font"
             }
         ]
