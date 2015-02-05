@@ -1,5 +1,8 @@
-#include "pebble.h"
+#include <pebble.h>
 #include "pebble_fonts.h"
+  
+// forked from https://github.com/MaikJoosten/DutchFuzzyTimeSource
+// License: GPLv3
 
 // If this is defined, the face will use minutes and seconds instead of hours and minutes
 // to make debugging faster.
@@ -24,7 +27,10 @@ static word_t second_word;
 static word_t second_word_between;
 static word_t third_word;
 static const char *hours[] = {"twaalf","een","twee","drie","vier","vijf","zes","zeven","acht","negen","tien","elf","twaalf"};
+static int minute_offset;
 
+static const bool use_twintig = true;
+  
 TextLayer *text_layer_setup(Window * window, GRect frame, GFont font) {
 	TextLayer *layer = text_layer_create(frame);
 	text_layer_set_text(layer, "");
@@ -34,22 +40,6 @@ TextLayer *text_layer_setup(Window * window, GRect frame, GFont font) {
 	text_layer_set_font(layer, font);
 	layer_add_child(window_get_root_layer(window), text_layer_get_layer(layer));
 	return layer;
-}
-
-static const char *hour_string(int h) {
-	if(h > 11) {
-		h -= 12;
-	}
-	return hours[h];
-}
-static const char *min_string(int m) {
-	const char * min;
-	if(m == 5) {
-		min = "vijf";
-	} else {
-		min = "tien";
-	}
-	return min;
 }
 
 static void update_word(word_t * const word) {
@@ -62,61 +52,36 @@ static void update_word(word_t * const word) {
 	text_layer_set_text(word->layer, word->text);
 }
 
-static void nederlands_format(int h, int m) {
-	first_word.text = "";
-	first_word_between.text = "";
-	second_word.text = "";
-	second_word_between.text = "";
-	third_word.text = "";
+static const char* hour_string(int h) {
+  return hours[h % 12];
+}
 
-	int unrounded = m;
-	float temp_m = m;
-	temp_m = temp_m / 5;
-	m = temp_m + 0.5;
-	m = m * 5;
+static const char* minute_string(int m){
+  switch(m){
+    case 0:
+    case 60:
+      return "";
+    case 10:
+    case 50:
+      return "tien";
+    case 15:
+    case 45:
+      return "kwart";
+    case 20:
+    case 40:
+      if (use_twintig)
+        return "twintig";
+      else
+        return "tien";
+    default: 
+      return "vijf";
+  }
+}
 
-	if(m == 0 || m == 60) {
-		if(m == 60) {
-			h++;
-		}
-		first_word_between.text = hour_string(h);
-		second_word_between.text = "uur";
-	} else if(m == 30) {
-		first_word_between.text = "half";
-		second_word_between.text = hour_string(h + 1);
-	} else if(m == 15) {
-		first_word.text = "kwart";
-		second_word.text = "over";
-		third_word.text = hour_string(h);
-	} else if(m == 45) {
-		first_word.text = "kwart";
-		second_word.text = "voor";
-		third_word.text = hour_string(h + 1);
-	} else if(m > 30) {
-		if(m < 45) {
-			first_word.text = min_string(m - 30);
-			second_word.text = "over half";
-			third_word.text = hour_string(h + 1);
-		} else {
-			first_word.text = min_string(60 - m);
-			second_word.text = "voor";
-			third_word.text = hour_string(h + 1);
-		}
-	} else {
-		if(m > 15) {
-			first_word.text = min_string(30 - m);
-			second_word.text = "voor half";
-			third_word.text = hour_string(h + 1);
-		} else {
-			first_word.text = min_string(m);
-			second_word.text = "over";
-			third_word.text = hour_string(h);
-		}
-	}
-
-	GRect frame;
+static void render_minute_offset() {
+  GRect frame;
 	GRect frame_right;
-	switch(unrounded - m) {
+	switch(minute_offset) {
 		case -2:
 		frame = GRect(116, 167, 28, 1);
 		frame_right = frame;
@@ -150,6 +115,50 @@ static void nederlands_format(int h, int m) {
 	animation_schedule(&inverter_anim->animation);
 }
 
+static void render_dutch_time(int h, int m){
+  // reset
+  first_word.text = "";
+	first_word_between.text = "";
+	second_word.text = "";
+	second_word_between.text = "";
+	third_word.text = "";
+  
+  bool voor = m>27;
+  int fuzzy_hour = voor ? h+1 : h; // add one to the hour, because we're going to say e.g. 'half elf' (in english: 'halfway eleven', which would be 'half ten' in proper english)
+  
+	float temp_m = m;
+	temp_m = temp_m / 5;
+	int fuzzy_minute = temp_m + 0.5;
+	fuzzy_minute *= 5;
+  minute_offset = m - fuzzy_minute; // offset of the minute to a multiple of 5
+  
+  // whole hour
+  if(fuzzy_minute == 0 || fuzzy_minute == 60) {
+    first_word_between.text = hour_string(fuzzy_hour); 
+    second_word_between.text = "uur";
+    return;
+  }
+  // half hour
+  if (fuzzy_minute == 30) {
+    first_word_between.text = "half";
+    second_word_between.text = hour_string(fuzzy_hour);
+    return;
+  }
+  
+  first_word.text = minute_string(fuzzy_minute);
+  if (fuzzy_minute == 25 || (!use_twintig && fuzzy_minute == 20)) {
+    second_word.text = "voor half";
+  }
+  else if (fuzzy_minute == 35 || (!use_twintig && fuzzy_minute == 40)) {
+    second_word.text = "over half";
+  }
+  else {
+    second_word.text = voor ? "voor" : "over";
+  }
+    
+  third_word.text = hour_string(fuzzy_hour);
+}
+
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 	first_word.old_text = first_word.text;
 	first_word_between.old_text = first_word_between.text;
@@ -158,10 +167,11 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 	third_word.old_text = third_word.text;
 
 #ifdef DEBUG_FAST
-	nederlands_format(tick_time->tm_min % 24,  tick_time->tm_sec);
+  render_dutch_time(tick_time->tm_min % 24,  tick_time->tm_sec);
 #else
-	nederlands_format(tick_time->tm_hour,  tick_time->tm_min);
+  render_dutch_time(tick_time->tm_hour,  tick_time->tm_min);
 #endif
+  render_minute_offset();
 
 	update_word(&first_word);
 	update_word(&first_word_between);
@@ -192,9 +202,11 @@ static void init() {
 	window_stack_push(window, false);
 	window_set_background_color(window, GColorBlack);
 
-	font_big = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_40));
-	font_small = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_30));
-
+	font_big = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_GEORGIA_40));
+	font_small = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_GEORGIA_30));
+  //font_big = fonts_get_system_font(FONT_KEY_GOTHIC_28);
+  //font_small = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+  
 	text_layer(&first_word, GRect(0, 12, 143, 50), font_big);
 	text_layer(&second_word, GRect(0, 62, 143, 42), font_small);
 	text_layer(&third_word, GRect(0, 96, 143, 50), font_big);
