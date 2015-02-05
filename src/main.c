@@ -6,7 +6,7 @@
 
 // If this is defined, the face will use minutes and seconds instead of hours and minutes
 // to make debugging faster.
-// #define DEBUG_FAST
+//#define DEBUG_FAST
 
 static Window *window;
 static GFont font_small;
@@ -29,7 +29,29 @@ static word_t third_word;
 static const char *hours[] = {"twaalf","een","twee","drie","vier","vijf","zes","zeven","acht","negen","tien","elf","twaalf"};
 static int minute_offset;
 
-static const bool use_twintig = true;
+static bool use_twintig = false;
+//static const int setting_twintig = 1;
+static enum SettingTwintig { twintig_off = 0, twintig_on, twintig_count } twintig;
+static AppSync app;
+static uint8_t buffer[256];
+
+static void tuple_changed_callback(const uint32_t key, const Tuple* tuple_new, const Tuple* tuple_old, void* context) {
+  // we know these values are uint8 format
+  int value = tuple_new->value->uint8;
+    switch (key) {
+    case 1: // Use twintig
+      if ((value >= 0) && (value < twintig_count) && (twintig != value)) {
+        // update value
+        twintig = value;
+        use_twintig = twintig==0 ? false : true;
+      }
+      break;
+    }
+}
+
+static void app_error_callback(DictionaryResult dict_error, AppMessageResult app_message_error, void* context) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "app error %d", app_message_error);
+}
   
 TextLayer *text_layer_setup(Window * window, GRect frame, GFont font) {
 	TextLayer *layer = text_layer_create(frame);
@@ -123,7 +145,7 @@ static void render_dutch_time(int h, int m){
 	second_word_between.text = "";
 	third_word.text = "";
   
-  bool voor = m>27;
+  bool voor = use_twintig ? m>22 : m>17;
   int fuzzy_hour = voor ? h+1 : h; // add one to the hour, because we're going to say e.g. 'half elf' (in english: 'halfway eleven', which would be 'half ten' in proper english)
   
 	float temp_m = m;
@@ -220,6 +242,13 @@ static void init() {
 	inverter_anim = property_animation_create_layer_frame(inverter_layer_get_layer(inverter), NULL, NULL);
 	animation_set_duration(&inverter_anim->animation, 500);
 	animation_set_curve(&inverter_anim->animation, AnimationCurveEaseIn);
+  // app communication
+  Tuplet tuples[] = {
+    TupletInteger(1, twintig)
+  };
+  app_message_open(160, 160);
+  app_sync_init(&app, buffer, sizeof(buffer), tuples, ARRAY_LENGTH(tuples),
+  tuple_changed_callback, app_error_callback, NULL);
 
 #ifdef DEBUG_FAST
 	tick_timer_service_subscribe(SECOND_UNIT, handle_tick);

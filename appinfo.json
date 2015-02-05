@@ -1,0 +1,30 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        "configurable"
+    ],
+    "companyName": "tjeerdhans (original by Maik Joosten)",
+    "longName": "Dutch time",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "fonts/GeorgiaSmall.ttf",
+                "name": "GEORGIA_30",
+                "type": "font"
+            },
+            {
+                "file": "fonts/Georgia.ttf",
+                "name": "GEORGIA_40",
+                "type": "font"
+            }
+        ]
+    },
+    "shortName": "Dutch time",
+    "uuid": "1df6df82-0403-4807-a1c7-764f67a17ee7",
+    "versionCode": 1,
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": true
+    }
+}
