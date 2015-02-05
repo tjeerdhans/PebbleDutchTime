@@ -1,10 +1,9 @@
 Pebble Dutch Time
 =================
 
-Forked from MaikJoosten/DutchFuzzyTimeSource
+This is a Pebble Watchface that displays the approximate time in Dutch.
 
-Renamed to Pebble Dutch Time.
+Forked from MaikJoosten/DutchFuzzyTimeSource and renamed to 'Dutch time'.
 
 Added optional use of 'twintig', so time can be displayed as 'twintig voor tien' instead of 'tien over half tien'. 
-
-Currently working on integration with setpebble.com, so this 'twintig' option can be switched on or off.
+It's integrated with setpebble.com, so this 'twintig' option can be switched on or off.
