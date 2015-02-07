@@ -23,7 +23,7 @@
     "shortName": "Dutch time",
     "uuid": "1df6df82-0403-4807-a1c7-764f67a17ee7",
     "versionCode": 1,
-    "versionLabel": "1.0",
+    "versionLabel": "1.1",
     "watchapp": {
         "watchface": true
     }

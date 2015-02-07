@@ -6,7 +6,7 @@
 
 // If this is defined, the face will use minutes and seconds instead of hours and minutes
 // to make debugging faster.
-//#define DEBUG_FAST
+// #define DEBUG_FAST
 
 static Window *window;
 static GFont font_small;

@@ -1,20 +1,15 @@
 //  file: pebble-js-app.js
-//  auth: Matthew Clark, SetPebble
+//  auth: Matthew Clark, SetPebble, modifications by tjeerdhans
 
 // change this token for your project
 var setPebbleToken = 'VJY7';
 
-
-Pebble.addEventListener('ready', function(e) {
-});
-Pebble.addEventListener('appmessage', function(e) {
-  key = e.payload.action;
-  if (typeof(key) != 'undefined') {
-    var settings = localStorage.getItem(setPebbleToken);
+function getAndApplySettings(){
+  var settings = localStorage.getItem(setPebbleToken);
     if (typeof(settings) == 'string') {
       try {
         Pebble.sendAppMessage(JSON.parse(settings));
-      } catch (e) {
+      } catch (ex) {
       }
     }
     var request = new XMLHttpRequest();
@@ -23,11 +18,21 @@ Pebble.addEventListener('appmessage', function(e) {
       if (request.readyState == 4)
         if (request.status == 200)
           try {
-            Pebble.sendAppMessage(JSON.parse(request.responseText));
-          } catch (e) {
-          }
-    }
+            var settings = JSON.parse(request.responseText);
+            localStorage.setItem(setPebbleToken, settings);
+            Pebble.sendAppMessage(settings);
+          } catch (ex) { }
+    };
     request.send(null);
+}
+
+Pebble.addEventListener('ready', function(e) {
+   getAndApplySettings();
+});
+Pebble.addEventListener('appmessage', function(e) {
+  var key = e.payload.action;
+  if (typeof(key) != 'undefined') {
+    getAndApplySettings();
   }
 });
 Pebble.addEventListener('showConfiguration', function(e) {
@@ -38,7 +43,6 @@ Pebble.addEventListener('webviewclosed', function(e) {
     try {
       Pebble.sendAppMessage(JSON.parse(e.response));
       localStorage.setItem(setPebbleToken, e.response);
-    } catch(e) {
-    }
+    } catch(ex) { }
   }
 });
