@@ -2,14 +2,17 @@
 //  auth: Matthew Clark, SetPebble, modifications by tjeerdhans
 
 // change this token for your project
-var setPebbleToken = 'VJY7';
+//var setPebbleToken = 'VJY7'; //v1.0
+var setPebbleToken = 'ZGRY'; // v1.1
 
 function getAndApplySettings(){
   var settings = localStorage.getItem(setPebbleToken);
+    console.log(settings);
     if (typeof(settings) == 'string') {
       try {
         Pebble.sendAppMessage(JSON.parse(settings));
       } catch (ex) {
+        console.log(ex.message);
       }
     }
     var request = new XMLHttpRequest();
@@ -19,9 +22,11 @@ function getAndApplySettings(){
         if (request.status == 200)
           try {
             var settings = JSON.parse(request.responseText);
-            localStorage.setItem(setPebbleToken, settings);
+            localStorage.setItem(setPebbleToken, request.responseText);
             Pebble.sendAppMessage(settings);
-          } catch (ex) { }
+          } catch (ex) {
+            console.log(ex.message);
+          }
     };
     request.send(null);
 }
@@ -43,6 +48,8 @@ Pebble.addEventListener('webviewclosed', function(e) {
     try {
       Pebble.sendAppMessage(JSON.parse(e.response));
       localStorage.setItem(setPebbleToken, e.response);
-    } catch(ex) { }
+    } catch(ex) {
+      console.log(ex.message);
+    }
   }
 });
