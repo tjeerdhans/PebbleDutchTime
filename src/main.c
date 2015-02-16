@@ -43,6 +43,7 @@ char toaster_buffer[160];
 GRect start02, finish01;
 char *toaster_sentences[1][7] = {
 	{
+    "",
 		"Settings updated.",
     "Using twintig:",
 		"Bluetooth disconnected.",
@@ -108,6 +109,27 @@ void toaster_notification(int sentence, bool vibrate, int vibrateNum, int animat
 	
 }
 
+// http://stackoverflow.com/questions/21150193/logging-enums-on-the-pebble-watch
+char *translate_error(AppMessageResult result) {
+  switch (result) {
+    case APP_MSG_OK: return "APP_MSG_OK";
+    case APP_MSG_SEND_TIMEOUT: return "APP_MSG_SEND_TIMEOUT";
+    case APP_MSG_SEND_REJECTED: return "APP_MSG_SEND_REJECTED";
+    case APP_MSG_NOT_CONNECTED: return "APP_MSG_NOT_CONNECTED";
+    case APP_MSG_APP_NOT_RUNNING: return "APP_MSG_APP_NOT_RUNNING";
+    case APP_MSG_INVALID_ARGS: return "APP_MSG_INVALID_ARGS";
+    case APP_MSG_BUSY: return "APP_MSG_BUSY";
+    case APP_MSG_BUFFER_OVERFLOW: return "APP_MSG_BUFFER_OVERFLOW";
+    case APP_MSG_ALREADY_RELEASED: return "APP_MSG_ALREADY_RELEASED";
+    case APP_MSG_CALLBACK_ALREADY_REGISTERED: return "APP_MSG_CALLBACK_ALREADY_REGISTERED";
+    case APP_MSG_CALLBACK_NOT_REGISTERED: return "APP_MSG_CALLBACK_NOT_REGISTERED";
+    case APP_MSG_OUT_OF_MEMORY: return "APP_MSG_OUT_OF_MEMORY";
+    case APP_MSG_CLOSED: return "APP_MSG_CLOSED";
+    case APP_MSG_INTERNAL_ERROR: return "APP_MSG_INTERNAL_ERROR";
+    default: return "UNKNOWN ERROR";
+  }
+}
+
 static void tuple_changed_callback(const uint32_t key, const Tuple* tuple_new, const Tuple* tuple_old, void* context) {
   // we know these values are uint8 format
   int value = tuple_new->value->uint8;
@@ -122,7 +144,7 @@ static void tuple_changed_callback(const uint32_t key, const Tuple* tuple_new, c
             break;
           }
           char* yes_or_no =  use_twintig ? "Yes" : "No";
-          toaster_notification(2, false, 0, 5000, 0, yes_or_no);
+          toaster_notification(3, false, 0, 5000, 0, yes_or_no);
           APP_LOG(APP_LOG_LEVEL_DEBUG, "app setting: twintig: %s", yes_or_no);
           first_time_setting = false;          
         }
@@ -132,7 +154,7 @@ static void tuple_changed_callback(const uint32_t key, const Tuple* tuple_new, c
 
 static void app_error_callback(DictionaryResult dict_error, AppMessageResult app_message_error, void* context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "app error %d", app_message_error);
-  toaster_notification(2, false, 0, 5000, 0, "app error");
+  toaster_notification(1, false, 0, 5000, 0, translate_error(ap_message_error));
 }
   
 TextLayer *text_layer_setup(Window * window, GRect frame, GFont font) {
